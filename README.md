@@ -1,65 +1,79 @@
-# formating
+
+# Install Package 'readxl' untuk membaca data input bertipe .xls dan .xlsx
+
+install.packages('readxl')
+
+
+
+# Load package 'readxl'
+
+library('readxl')
+
+
 #membaca file
-folder <- "C:/Users/ide2/Documents/ANGGUN_MBA/homework_formating/"
-file_list <- list.files(path=folder, pattern="*.csv") 
-
-
-for (i in 1:length(file_list)){
-  
-  assign(file_list[i],read.csv(paste(folder, file_list[i], sep='')))
-  
-}
-
+online_retail = read_excel('C:/Users/ide2/Documents/ANGGUN_MBA/homework_formating/Online_Retail.xlsx')
 
 #melihat isi file
-online_retail = Online_Retail.csv
 
-online_retail
+
+head(online_retail)
 
 # preview first 6 rows of data
 head(online_retail)
+
+#melihat struktur data
+str(online_retail)
+
 
 #melihat summary data
 summary(online_retail)
 
 #melihat missing value
-
+library(DataExplorer)
 plot_missing(online_retail)
 
-# load library
-library(tidyverse)
-library(lubridate)
-library(DataExplorer)
+#terdapat missing pada field 24.93 %
+
+#drop data dengan customerid = Na
+online_retail_clean = online_retail[!is.na(online_retail$CustomerID),]
+
+#cek ulang missing value customerid dengan data clean
+plot_missing(online_retail_clean)
+
+#melihat summary data clean
+summary(online_retail_clean)
+
+#membuat summary data yang berisi customerid, recency, frequency, dan monetary
 
 # Recency   : jumlah hari ini s.d. terakhir bertransaksi (dalam hari)
 # Frequency : jumlah transaksi yang terjadi dalam 6 bulan terakhir 
 # Monetary  : jumlah uang yang dibelanjakan oleh Customer ID unik
 
+library('tidyverse')
 
-frequency <- online_retail %>% group_by(CustomerID = as.integer(CustomerID))%>% summarise(frequency = n_distinct(CustomerID))
-frequency
+frequency <- online_retail_clean %>% group_by(CustomerID)%>% summarise(frequency = n_distinct(InvoiceNo))
+head(frequency)
 
+monetary <- online_retail %>% group_by(CustomerID) %>% summarise(monetary=sum(UnitPrice*Quantity))                                               
 
-
-monetary <- online_retail %>% group_by(CustomerID = as.numeric(CustomerID)) %>% summarise(monetary=sum(as.numeric(UnitPrice)*as.numeric(Quantity)))                                               
-
-monetary
-
+head(monetary)
 
 
 
+library('lubridate')
 recency <- online_retail %>% group_by(CustomerID) %>% arrange(desc(InvoiceDate)) %>%   filter(row_number()==1) %>% mutate(recency = as.numeric(as.duration(interval(InvoiceDate,ymd("2011-12-31"))))/86400) %>% select(CustomerID, recency)  
 
-recency
+head(recency)
 
 
 #melakukan proses join untuk proses penggabungan
 df_rfm <- recency %>% left_join(frequency,by="CustomerID") %>% left_join(monetary,by="CustomerID")
-df_rfm
+head(df_rfm)
 
 #melihat summary data
 summary (df_rfm)
 
-
+#write result 
+write.csv(df_rfm, "C:/Users/ide2/Documents/ANGGUN_MBA/homework_formating/online_result_formating_dian_anggun.csv", quote = F, row.names= F)
 
 
